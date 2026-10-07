@@ -110,8 +110,13 @@
   async function call(action, data) {
     data = Object.assign({ action: action, code: sessionStorage.getItem('kr_code') || '' }, data || {});
     if (DEMO) return Demo.handle(data);
-    var res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(data) });
-    var j = await res.json();
+    var res, txt, j;
+    try {
+      res = await fetch(CONFIG.API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(data), cache: 'no-store' });
+      txt = await res.text();
+    } catch (e) { throw new Error('서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도하세요'); }
+    try { j = JSON.parse(txt); }
+    catch (e) { throw new Error('서버 응답 오류(' + res.status + '). Apps Script 웹앱 배포의 액세스 권한이 "모든 사용자"인지, 주소가 최신 배포인지 확인하세요'); }
     if (!j.ok) throw new Error(j.error || '서버 오류');
     return j.data;
   }
